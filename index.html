@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TO IGNORE THE GIRL - Open World Map Edition</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, Arial, sans-serif; }
+:root {
+  --bg: #080a10;
+  --panel: #11151e;
+  --panel2: #181e29;
+  --line: #2a3240;
+  --text: #f5f7fb;
+  --muted: #9da8b8;
+  --gold: #ffbd55;
+  --pink: #ff6da8;
+  --blue: #62b8ff;
+  --green: #55dc8c;
+  --red: #ff6868;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+}
+.app { width: min(900px, 100%); }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  background: var(--panel);
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+.logo { font-weight: 900; letter-spacing: 1px; font-size: 16px; color: var(--gold); }
+.stats-bar { display: flex; gap: 15px; font-size: 13px; color: var(--muted); }
+.stats-bar b { color: #fff; }
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* MAP SCREEN */
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 450px;
+  background: radial-gradient(circle, #1a233a 0%, #0d1119 100%);
+  border: 2px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: crosshair;
+}
+.map-grid-lines {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.player-pin {
+  position: absolute;
+  width: 30px; height: 30px;
+  background: var(--gold);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 15px var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: top 0.1s linear, left 0.1s linear;
+  z-index: 10;
+}
+.encounter-dot {
+  position: absolute;
+  padding: 6px 10px;
+  background: var(--panel2);
+  border: 2px solid var(--pink);
+  border-radius: 20px;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255,109,168,0.4);
+  transition: 0.2s;
+  z-index: 5;
+}
+.encounter-dot:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  background: var(--pink);
+  color: #000;
+}
+.map-instructions {
+  text-align: center;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* CONVERSATION SCREEN */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 20px;
+}
+.meters-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+.meter-box {
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  padding: 10px;
+  border-radius: 12px;
+}
+.meter-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.meter { height: 8px; background: #080a0e; border-radius: 4px; overflow: hidden; }
+.meter-fill { height: 100%; width: 100%; transition: width 0.3s; }
+.interest-fill { background: var(--pink); }
+.patience-fill { background: var(--blue); }
+
+.scene-box {
+  background: linear-gradient(135deg, #162032, #0d121c);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 25px;
+  text-align: center;
+  margin-bottom: 15px;
+  position: relative;
+}
+.npc-avatar { font-size: 70px; margin-bottom: 8px; }
+.npc-name { font-size: 14px; color: var(--gold); margin-bottom: 10px; font-weight: bold; }
+.dialogue-text { font-size: 18px; font-style: italic; min-height: 50px; line-height: 1.4; color: #e2e8f0; }
+
+.timer-bar-container { height: 5px; background: #1a2230; border-radius: 3px; margin-bottom: 15px; overflow: hidden; }
+.timer-bar-fill { height: 100%; width: 100%; background: var(--gold); transition: width 0.1s linear; }
+
+.choices-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.choice-btn {
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  color: #fff;
+  padding: 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  transition: 0.2s;
+}
+.choice-btn:hover { border-color: var(--gold); background: #1f2838; }
+
+.action-buttons { display: flex; gap: 10px; }
+.btn-main {
+  flex: 1; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 14px;
+}
+.btn-ignore { background: #2a3240; color: #fff; }
+.btn-ignore:hover { background: var(--red); }
+
+/* CLUES */
+.clue-box { background: var(--panel2); padding: 12px; border-radius: 12px; margin-top: 15px; font-size: 13px; border: 1px dashed var(--line); color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="logo">TO IGNORE THE GIRL 🗺️</div>
+    <div class="stats-bar">
+      <div>Rizz: <b id="rizzScore">0</b></div>
+      <div>Score: <b id="totalScore">0</b></div>
+    </div>
+  </header>
+
+  <!-- MAP SCREEN -->
+  <section id="mapScreen" class="screen active">
+    <div class="map-container" id="mapArea">
+      <div class="map-grid-lines"></div>
+      <div class="player-pin" id="playerPin">🧍</div>
+      <!-- Encounter Dots will be injected here -->
+    </div>
+    <div class="map-instructions">
+      Click anywhere on the map to move your character, or click on a <b>🔴 Encounter Dot</b> to start a conversation!
+    </div>
+  </section>
+
+  <!-- CONVERSATION SCREEN -->
+  <section id="conversationScreen" class="screen">
+    <div class="card">
+      <div class="meters-row">
+        <div class="meter-box">
+          <div class="meter-label"><span>❤️ Interest</span><b id="interestNum">70</b></div>
+          <div class="meter"><div id="interestFill" class="meter-fill interest-fill" style="width:70%"></div></div>
+        </div>
+        <div class="meter-box">
+          <div class="meter-label"><span>⏳ Patience</span><b id="patienceNum">100</b></div>
+          <div class="meter"><div id="patienceFill" class="meter-fill patience-fill" style="width:100%"></div></div>
+        </div>
+      </div>
+
+      <div class="timer-bar-container">
+        <div id="timerFill" class="timer-bar-fill" style="width: 100%"></div>
+      </div>
+
+      <div class="scene-box">
+        <div class="npc-avatar" id="npcAvatar">👩</div>
+        <div class="npc-name" id="npcName">Unknown</div>
+        <div class="dialogue-text" id="dialogueText">"..."</div>
+      </div>
+
+      <div class="choices-grid" id="choicesGrid">
+        <!-- Dynamic Choice Buttons -->
+      </div>
+
+      <div class="clue-box" id="clueBox">
+        <b>🔎 Observation Clue:</b> Watch out for inconsistent dialogue or behavior clues before deciding!
+      </div>
+
+      <br>
+      <div class="action-buttons">
+        <button class="btn-main btn-ignore" onclick="ignoreEncounter()">🚫 Ignore & Walk Away</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+let playerX = 450, playerY = 225;
+let rizz = 0, score = 0;
+let currentEncounter = null;
+let timerInterval = null;
+let timeLeft = 10;
+let interest = 70, patience = 100;
+
+const encounters = [
+  { id: 1, name: "Aarohi (Park)", x: 200, y: 120, avatar: "💃", type: "genuine", dialogue: "Hi there! Enjoying the weather? Why did you pick this spot?", clues: "She smiles warmly and her story about walking her dog matches her relaxed posture.", options: [
+      { text: "💬 'I love quiet places like this.'", interest: +15, patience: +5, correct: true },
+      { text: "☕ 'Do you want to grab coffee?'", interest: +10, patience: 0, correct: true },
+      { text: "🧢 'You look suspicious.'", interest: -20, patience: -20, correct: false },
+      { text: "😶 Say nothing", interest: -10, patience: -30, correct: false }
+    ]
+  },
+  { id: 2, name: "Mysterious Stranger (Beach)", x: 700, y: 150, avatar: "🕶️", type: "disguise", dialogue: "Hey bro! Uh I mean... hey handsome! Let's go on a secret date!", clues: "Voice pitch sounds unusually deep, and outfit style looks rushed/hidden.", options: [
+      { text: "💬 'Your voice sounds a bit deep, buddy?'", interest: +20, patience: +10, correct: true, trapReveal: true },
+      { text: "💖 'Let's go right now!'", interest: -50, patience: 0, trapFail: true },
+      { text: "🏃‍♂️ Walk away immediately", interest: +10, patience: +10, correct: true },
+      { text: "😶 Stare awkwardly", interest: -10, patience: -20, correct: false }
+    ]
+  },
+  { id: 3, name: "Srijana (Cafe)", x: 300, y: 350, avatar: "📚", type: "genuine", dialogue: "Good books make better company. What are you reading?", clues: "Carrying actual library books, speaks softly and intelligently.", options: [
+      { text: "💬 'Just exploring the city map.'", interest: +10, patience: +5, correct: true },
+      { text: "📚 'I prefer action comics!'", interest: +5, patience: 0, correct: true },
+      { text: "😴 Fall asleep standing", interest: -30, patience: -40, correct: false },
+      { text: "🚫 Ignore her rudely", interest: -10, patience: -20, correct: false }
+    ]
+  }
+];
+
+function initMap() {
+  const mapArea = document.getElementById('mapArea');
+  // Clear old dots except player
+  document.querySelectorAll('.encounter-dot').forEach(d => d.remove());
+
+  encounters.forEach(enc => {
+    const dot = document.createElement('div');
+    dot.className = 'encounter-dot';
+    dot.style.left = enc.x + 'px';
+    dot.style.top = enc.y + 'px';
+    dot.innerHTML = `🔴 ${enc.name.split(' ')[0]}`;
+    dot.onclick = (e) => {
+      e.stopPropagation();
+      startEncounter(enc);
+    };
+    mapArea.appendChild(dot);
+  });
+
+  updatePlayerPos();
+}
+
+function updatePlayerPos() {
+  const pin = document.getElementById('playerPin');
+  pin.style.left = playerX + 'px';
+  pin.style.top = playerY + 'px';
+}
+
+document.getElementById('mapArea').onclick = (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  playerX = e.clientX - rect.left;
+  playerY = e.clientY - rect.top;
+  updatePlayerPos();
+};
+
+function startEncounter(enc) {
+  currentEncounter = enc;
+  interest = 70;
+  patience = 100;
+  
+  document.getElementById('mapScreen').classList.remove('active');
+  document.getElementById('conversationScreen').classList.add('active');
+
+  document.getElementById('npcAvatar').innerText = enc.avatar;
+  document.getElementById('npcName').innerText = enc.name;
+  document.getElementById('dialogueText').innerText = `"${enc.dialogue}"`;
+  document.getElementById('clueBox').innerHTML = `<b>🔎 Observation Clue:</b> ${enc.clues}`;
+
+  loadChoices();
+  startTimer();
+}
+
+function loadChoices() {
+  const grid = document.getElementById('choicesGrid');
+  grid.innerHTML = '';
+  currentEncounter.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerText = opt.text;
+    btn.onclick = () => chooseOption(opt);
+    grid.appendChild(btn);
+  });
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = 10;
+  const fill = document.getElementById('timerFill');
+  
+  timerInterval = setInterval(() => {
+    timeLeft -= 0.1;
+    fill.style.width = (timeLeft / 10 * 100) + '%';
+    
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      patience -= 25;
+      updateMeters();
+      if (patience <= 0) {
+        alert("Patience ran out! They walked away.");
+        returnToMap();
+      }
+    }
+  }, 100);
+}
+
+function chooseOption(opt) {
+  clearInterval(timerInterval);
+  interest += opt.interest;
+  patience += opt.patience;
+  
+  if (opt.trapReveal) {
+    alert("💡 Surprise! Mask came off—it was a prank disguise! You successfully caught the trap! 😎");
+    rizz += 30;
+    score += 50;
+    returnToMap();
+    return;
+  }
+  
+  if (opt.trapFail) {
+    alert("💀 Loudai lagyo! You accepted blindly without checking clues and fell for the trap! Game Over for this round.");
+    returnToMap();
+    return;
+  }
+
+  updateMeters();
+
+  if (interest >= 100) {
+    alert("💕 Date was a massive success! Great observation and chat.");
+    rizz += 20;
+    score += 40;
+    returnToMap();
+  } else {
+    // Next dialogue phase
+    document.getElementById('dialogueText').innerText = `"That's interesting... tell me more."`;
+  }
+}
+
+function ignoreEncounter() {
+  clearInterval(timerInterval);
+  alert("🚫 You successfully ignored/walked past. Safe choice!");
+  rizz += 5;
+  score += 10;
+  returnToMap();
+}
+
+function updateMeters() {
+  document.getElementById('interestNum').innerText = interest;
+  document.getElementById('interestFill').style.width = Math.max(0, Math.min(100, interest)) + '%';
+  document.getElementById('patienceNum').innerText = patience;
+  document.getElementById('patienceFill').style.width = Math.max(0, Math.min(100, patience)) + '%';
+  document.getElementById('rizzScore').innerText = rizz;
+  document.getElementById('totalScore').innerText = score;
+}
+
+function returnToMap() {
+  clearInterval(timerInterval);
+  document.getElementById('conversationScreen').classList.remove('active');
+  document.getElementById('mapScreen').classList.add('active');
+  updateMeters();
+  initMap();
+}
+
+// Initial Run
+initMap();
+</script>
+</body>
+</html>
