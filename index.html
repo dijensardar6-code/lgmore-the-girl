@@ -1,416 +1,552 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TO IGNORE THE GIRL - Open World Map Edition</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Park Talk 3D">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Park Talk 3D — Boy &amp; Girl</title>
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Park%20Talk%203D%22%2C%22short_name%22%3A%22Park%20Talk%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230b1020%22%2C%22theme_color%22%3A%22%230b1020%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%253D%25270%25200%2520512%2520512%2527%253E%253Crect%2520width%253D%2527512%2527%2520height%253D%2527512%2527%2520fill%253D%2527%25230b1020%2527%2F%253E%253Ctext%2520x%253D%2527256%2527%2520y%253D%2527330%2527%2520font-size%253D%2527220%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%2591%25AB%25F0%259F%2591%25A7%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, Arial, sans-serif; }
-:root {
-  --bg: #080a10;
-  --panel: #11151e;
-  --panel2: #181e29;
-  --line: #2a3240;
-  --text: #f5f7fb;
-  --muted: #9da8b8;
-  --gold: #ffbd55;
-  --pink: #ff6da8;
-  --blue: #62b8ff;
-  --green: #55dc8c;
-  --red: #ff6868;
-}
-body {
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px;
-}
-.app { width: min(900px, 100%); }
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  background: var(--panel);
-  padding: 12px 18px;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-}
-.logo { font-weight: 900; letter-spacing: 1px; font-size: 16px; color: var(--gold); }
-.stats-bar { display: flex; gap: 15px; font-size: 13px; color: var(--muted); }
-.stats-bar b { color: #fff; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b1020;color:#f8fafc;
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;user-select:none;
+    overscroll-behavior:none;touch-action:none;}
+  #scene{display:block;width:100%;height:100%;cursor:grab;}
+  #scene:active{cursor:grabbing;}
 
-.screen { display: none; }
-.screen.active { display: block; }
+  /* ============= UI LAYER ============= */
+  #ui{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;
+      justify-content:space-between;padding:12px;gap:8px;z-index:5;
+      padding-top:calc(12px + env(safe-area-inset-top));
+      padding-bottom:calc(12px + env(safe-area-inset-bottom));}
 
-/* MAP SCREEN */
-.map-container {
-  position: relative;
-  width: 100%;
-  height: 450px;
-  background: radial-gradient(circle, #1a233a 0%, #0d1119 100%);
-  border: 2px solid var(--line);
-  border-radius: 20px;
-  overflow: hidden;
-  cursor: crosshair;
-}
-.map-grid-lines {
-  position: absolute; inset: 0;
-  background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-.player-pin {
-  position: absolute;
-  width: 30px; height: 30px;
-  background: var(--gold);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 15px var(--gold);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
-  transition: top 0.1s linear, left 0.1s linear;
-  z-index: 10;
-}
-.encounter-dot {
-  position: absolute;
-  padding: 6px 10px;
-  background: var(--panel2);
-  border: 2px solid var(--pink);
-  border-radius: 20px;
-  transform: translate(-50%, -50%);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: bold;
-  color: #fff;
-  box-shadow: 0 0 10px rgba(255,109,168,0.4);
-  transition: 0.2s;
-  z-index: 5;
-}
-.encounter-dot:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-  background: var(--pink);
-  color: #000;
-}
-.map-instructions {
-  text-align: center;
-  margin-top: 12px;
-  color: var(--muted);
-  font-size: 13px;
-}
+  .card{background:rgba(15,23,42,.88);border:1px solid rgba(255,255,255,.14);border-radius:14px;
+        backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+        box-shadow:0 10px 30px rgba(0,0,0,.45);}
 
-/* CONVERSATION SCREEN */
-.card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 20px;
-}
-.meters-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 15px;
-}
-.meter-box {
-  background: var(--panel2);
-  border: 1px solid var(--line);
-  padding: 10px;
-  border-radius: 12px;
-}
-.meter-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
-.meter { height: 8px; background: #080a0e; border-radius: 4px; overflow: hidden; }
-.meter-fill { height: 100%; width: 100%; transition: width 0.3s; }
-.interest-fill { background: var(--pink); }
-.patience-fill { background: var(--blue); }
+  /* ============= TOP BAR ============= */
+  #topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;}
 
-.scene-box {
-  background: linear-gradient(135deg, #162032, #0d121c);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 25px;
-  text-align: center;
-  margin-bottom: 15px;
-  position: relative;
-}
-.npc-avatar { font-size: 70px; margin-bottom: 8px; }
-.npc-name { font-size: 14px; color: var(--gold); margin-bottom: 10px; font-weight: bold; }
-.dialogue-text { font-size: 18px; font-style: italic; min-height: 50px; line-height: 1.4; color: #e2e8f0; }
+  #stats{display:flex;gap:16px;padding:9px 13px;pointer-events:auto;}
+  .stat{width:110px;}
+  .stat-label{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.06em;
+    text-transform:uppercase;opacity:.85;margin-bottom:4px;}
+  .track{height:7px;border-radius:99px;background:rgba(255,255,255,.13);overflow:hidden;}
+  .fill{height:100%;width:100%;transition:width .35s ease;border-radius:99px;}
+  #interest-fill{background:linear-gradient(90deg,#f472b6,#ec4899);}
+  #patience-fill{background:linear-gradient(90deg,#60a5fa,#3b82f6);}
 
-.timer-bar-container { height: 5px; background: #1a2230; border-radius: 3px; margin-bottom: 15px; overflow: hidden; }
-.timer-bar-fill { height: 100%; width: 100%; background: var(--gold); transition: width 0.1s linear; }
+  #topActions{display:flex;gap:6px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end;}
+  .icon-btn{padding:8px 10px;border-radius:10px;font-size:14px;line-height:1;
+    background:rgba(15,23,42,.85);border:1px solid rgba(255,255,255,.16);
+    color:#f8fafc;cursor:pointer;font-family:inherit;transition:.15s;
+    display:flex;align-items:center;gap:5px;}
+  .icon-btn:hover{background:rgba(236,72,153,.3);border-color:#ec4899;}
+  .icon-btn.active{background:linear-gradient(135deg,#ec4899,#db2777);border-color:#ec4899;}
 
-.choices-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-.choice-btn {
-  background: var(--panel2);
-  border: 1px solid var(--line);
-  color: #fff;
-  padding: 14px;
-  border-radius: 12px;
-  cursor: pointer;
-  text-align: left;
-  font-size: 13px;
-  transition: 0.2s;
-}
-.choice-btn:hover { border-color: var(--gold); background: #1f2838; }
+  /* ============= BOTTOM BAR ============= */
+  #bottombar{display:flex;flex-direction:column;gap:8px;align-items:center;}
 
-.action-buttons { display: flex; gap: 10px; }
-.btn-main {
-  flex: 1; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 14px;
-}
-.btn-ignore { background: #2a3240; color: #fff; }
-.btn-ignore:hover { background: var(--red); }
+  #dialogue{width:min(760px,100%);padding:11px 16px;pointer-events:auto;}
+  #speaker{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#f472b6;
+    margin-bottom:4px;font-weight:700;}
+  #dialogue-text{font-size:14.5px;line-height:1.4;font-style:italic;}
 
-/* CLUES */
-.clue-box { background: var(--panel2); padding: 12px; border-radius: 12px; margin-top: 15px; font-size: 13px; border: 1px dashed var(--line); color: var(--muted); }
+  #choices{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:min(760px,100%);}
+  .choice-btn{pointer-events:auto;background:rgba(15,23,42,.9);border:1px solid rgba(255,255,255,.16);
+    color:#f8fafc;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:12.5px;
+    text-align:left;font-family:inherit;transition:.15s;line-height:1.3;}
+  .choice-btn:hover{background:rgba(236,72,153,.3);border-color:#ec4899;}
+  .choice-btn:active{transform:scale(.97);}
+  .choice-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  #microw{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;}
+  #mic-btn{pointer-events:auto;background:linear-gradient(135deg,#ec4899,#db2777);border:none;color:#fff;
+    padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;
+    box-shadow:0 6px 18px rgba(236,72,153,.45);transition:.15s;
+    display:flex;align-items:center;gap:6px;}
+  #mic-btn:hover{transform:translateY(-1px);}
+  #mic-btn.listening{background:linear-gradient(135deg,#ef4444,#b91c1c);animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+  #speech-status{font-size:11px;opacity:.6;}
+
+  /* ============= TOUCH CONTROLS (mobile) ============= */
+  #touchControls{position:fixed;inset:0;pointer-events:none;z-index:4;display:none;}
+  #touchControls.show{display:block;}
+
+  #joystick{position:fixed;bottom:calc(180px + env(safe-area-inset-bottom));left:20px;
+    width:130px;height:130px;border-radius:50%;
+    background:rgba(15,23,42,.4);border:2px solid rgba(255,255,255,.25);
+    pointer-events:auto;touch-action:none;
+    box-shadow:0 6px 20px rgba(0,0,0,.4);}
+  #joystick .knob{position:absolute;top:50%;left:50%;width:56px;height:56px;border-radius:50%;
+    background:rgba(236,72,153,.75);border:2px solid rgba(255,255,255,.5);
+    transform:translate(-50%,-50%);transition:background .15s;pointer-events:none;}
+  #joystick.active .knob{background:rgba(236,72,153,1);}
+
+  #runBtn{position:fixed;bottom:calc(200px + env(safe-area-inset-bottom));right:24px;
+    width:80px;height:80px;border-radius:50%;
+    background:rgba(15,23,42,.55);border:2px solid rgba(255,255,255,.25);
+    color:#f8fafc;font-size:13px;font-weight:700;cursor:pointer;pointer-events:auto;
+    touch-action:none;font-family:inherit;
+    box-shadow:0 6px 20px rgba(0,0,0,.4);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
+  #runBtn.active{background:linear-gradient(135deg,#ec4899,#db2777);border-color:#ec4899;}
+  #runBtn .ico{font-size:22px;}
+
+  #lookPad{position:fixed;bottom:calc(180px + env(safe-area-inset-bottom));right:120px;
+    width:130px;height:130px;border-radius:50%;
+    background:rgba(15,23,42,.25);border:2px dashed rgba(255,255,255,.18);
+    pointer-events:auto;touch-action:none;}
+  #lookPad::after{content:'👁 drag to look';position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;opacity:.5;text-align:center;padding:10px;pointer-events:none;}
+
+  /* ============= TITLE SCREEN ============= */
+  #titleScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 30%,#1e2b4a,#0b1020);
+    z-index:40;pointer-events:auto;padding:20px;transition:opacity .35s;}
+  #titleScreen.hide{opacity:0;pointer-events:none;}
+  #titleScreen .panel{max-width:420px;width:100%;text-align:center;padding:32px 24px;
+    border-radius:20px;background:rgba(15,23,42,.9);border:1px solid rgba(255,255,255,.16);
+    box-shadow:0 30px 80px rgba(0,0,0,.7);}
+  #titleScreen h1{margin:0 0 6px;font-size:30px;
+    background:linear-gradient(135deg,#f472b6,#60a5fa);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;letter-spacing:.02em;}
+  #titleScreen .sub{font-size:13px;opacity:.7;margin-bottom:24px;}
+  #titleScreen .btns{display:flex;flex-direction:column;gap:10px;}
+  .big-btn{padding:14px 22px;border-radius:12px;font-size:15px;font-weight:700;
+    cursor:pointer;font-family:inherit;border:none;color:#fff;
+    background:linear-gradient(135deg,#ec4899,#db2777);
+    box-shadow:0 8px 22px rgba(236,72,153,.45);transition:.15s;}
+  .big-btn:hover{transform:translateY(-2px);}
+  .big-btn.ghost{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+    box-shadow:none;font-weight:600;}
+  .big-btn.ghost:hover{background:rgba(255,255,255,.15);}
+
+  /* ============= SETTINGS MODAL ============= */
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(5,8,18,.85);z-index:50;padding:20px;pointer-events:auto;}
+  .modal.show{display:flex;}
+  .modal .box{max-width:420px;width:100%;padding:24px;border-radius:18px;
+    background:rgba(15,23,42,.97);border:1px solid rgba(255,255,255,.18);
+    box-shadow:0 25px 60px rgba(0,0,0,.7);}
+  .modal h2{margin:0 0 16px;font-size:20px;color:#f472b6;}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08);}
+  .row:last-of-type{border-bottom:none;}
+  .row label{font-size:13.5px;opacity:.9;}
+  .switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;border-radius:999px;cursor:pointer;
+    background:rgba(255,255,255,.15);transition:.2s;}
+  .slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;
+    border-radius:50%;background:#fff;transition:.2s;}
+  .switch input:checked + .slider{background:linear-gradient(135deg,#ec4899,#db2777);}
+  .switch input:checked + .slider:before{transform:translateX(20px);}
+  .range{width:120px;accent-color:#ec4899;}
+  .modal .actions{display:flex;gap:8px;margin-top:18px;}
+  .modal .actions button{flex:1;padding:11px;border-radius:10px;font-weight:700;
+    cursor:pointer;font-family:inherit;font-size:13.5px;border:none;color:#fff;
+    background:linear-gradient(135deg,#ec4899,#db2777);}
+  .modal .actions button.ghost{background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.2);font-weight:600;}
+
+  /* ============= ENDING ============= */
+  #ending{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(5,8,18,.9);z-index:60;pointer-events:auto;padding:20px;}
+  #ending.show{display:flex;}
+  #ending .box{max-width:480px;text-align:center;padding:28px 24px;border-radius:18px;
+    background:rgba(15,23,42,.97);border:1px solid rgba(255,255,255,.18);
+    box-shadow:0 25px 60px rgba(0,0,0,.7);}
+  #ending h1{margin:0 0 10px;font-size:24px;color:#f472b6;}
+  #ending p{margin:0 0 20px;font-size:14.5px;line-height:1.55;opacity:.9;}
+  #ending .actions{display:flex;gap:8px;}
+  #ending button{flex:1;background:linear-gradient(135deg,#ec4899,#db2777);border:none;color:#fff;
+    padding:12px 18px;border-radius:999px;font-weight:700;font-size:14px;cursor:pointer;
+    font-family:inherit;box-shadow:0 6px 18px rgba(236,72,153,.45);}
+  #ending button.ghost{background:rgba(255,255,255,.1);box-shadow:none;
+    border:1px solid rgba(255,255,255,.2);}
+
+  /* ============= LOADER ============= */
+  #loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0b1020;z-index:70;font-size:13px;letter-spacing:.1em;color:#94a3b8;
+    transition:opacity .3s;}
+  #loader.hide{opacity:0;pointer-events:none;}
+
+  /* ============= TOAST ============= */
+  #toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(20px);padding:10px 18px;border-radius:999px;
+    background:rgba(15,23,42,.95);border:1px solid rgba(255,255,255,.2);
+    font-size:13px;opacity:0;pointer-events:none;transition:.3s;z-index:55;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);white-space:nowrap;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ============= RESPONSIVE ============= */
+  @media(max-width:640px){
+    #choices{grid-template-columns:1fr;}
+    .stat{width:80px;}
+    #dialogue-text{font-size:13px;}
+    #dialogue{padding:9px 13px;}
+    .choice-btn{font-size:12px;padding:9px 11px;}
+    #hint{display:none;}
+  }
+  @media(min-width:900px){
+    #touchControls{display:none !important;}
+  }
 </style>
 </head>
 <body>
 
-<div class="app">
-  <header>
-    <div class="logo">TO IGNORE THE GIRL 🗺️</div>
-    <div class="stats-bar">
-      <div>Rizz: <b id="rizzScore">0</b></div>
-      <div>Score: <b id="totalScore">0</b></div>
-    </div>
-  </header>
+<canvas id="scene"></canvas>
 
-  <!-- MAP SCREEN -->
-  <section id="mapScreen" class="screen active">
-    <div class="map-container" id="mapArea">
-      <div class="map-grid-lines"></div>
-      <div class="player-pin" id="playerPin">🧍</div>
-      <!-- Encounter Dots will be injected here -->
-    </div>
-    <div class="map-instructions">
-      Click anywhere on the map to move your character, or click on a <b>🔴 Encounter Dot</b> to start a conversation!
-    </div>
-  </section>
-
-  <!-- CONVERSATION SCREEN -->
-  <section id="conversationScreen" class="screen">
-    <div class="card">
-      <div class="meters-row">
-        <div class="meter-box">
-          <div class="meter-label"><span>❤️ Interest</span><b id="interestNum">70</b></div>
-          <div class="meter"><div id="interestFill" class="meter-fill interest-fill" style="width:70%"></div></div>
-        </div>
-        <div class="meter-box">
-          <div class="meter-label"><span>⏳ Patience</span><b id="patienceNum">100</b></div>
-          <div class="meter"><div id="patienceFill" class="meter-fill patience-fill" style="width:100%"></div></div>
-        </div>
-      </div>
-
-      <div class="timer-bar-container">
-        <div id="timerFill" class="timer-bar-fill" style="width: 100%"></div>
-      </div>
-
-      <div class="scene-box">
-        <div class="npc-avatar" id="npcAvatar">👩</div>
-        <div class="npc-name" id="npcName">Unknown</div>
-        <div class="dialogue-text" id="dialogueText">"..."</div>
-      </div>
-
-      <div class="choices-grid" id="choicesGrid">
-        <!-- Dynamic Choice Buttons -->
-      </div>
-
-      <div class="clue-box" id="clueBox">
-        <b>🔎 Observation Clue:</b> Watch out for inconsistent dialogue or behavior clues before deciding!
-      </div>
-
-      <br>
-      <div class="action-buttons">
-        <button class="btn-main btn-ignore" onclick="ignoreEncounter()">🚫 Ignore & Walk Away</button>
-      </div>
-    </div>
-  </section>
+<!-- TOUCH CONTROLS (mobile only) -->
+<div id="touchControls">
+  <div id="joystick"><div class="knob"></div></div>
+  <div id="lookPad"></div>
+  <button id="runBtn"><span class="ico">🏃</span><span>RUN</span></button>
 </div>
 
-<script>
-let playerX = 450, playerY = 225;
-let rizz = 0, score = 0;
-let currentEncounter = null;
-let timerInterval = null;
-let timeLeft = 10;
-let interest = 70, patience = 100;
+<!-- UI -->
+<div id="ui">
+  <div id="topbar">
+    <div class="card" id="stats">
+      <div class="stat">
+        <div class="stat-label"><span>Interest</span><span id="interest-val">85%</span></div>
+        <div class="track"><div id="interest-fill" class="fill"></div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label"><span>Patience</span><span id="patience-val">100%</span></div>
+        <div class="track"><div id="patience-fill" class="fill"></div></div>
+      </div>
+    </div>
+    <div id="topActions">
+      <button class="icon-btn" id="btnView" title="Change view">🎥 <span id="viewLabel">Front</span></button>
+      <button class="icon-btn" id="btnSound" title="Toggle sound">🔊</button>
+      <button class="icon-btn" id="btnSettings" title="Settings">⚙️</button>
+    </div>
+  </div>
 
-const encounters = [
-  { id: 1, name: "Aarohi (Park)", x: 200, y: 120, avatar: "💃", type: "genuine", dialogue: "Hi there! Enjoying the weather? Why did you pick this spot?", clues: "She smiles warmly and her story about walking her dog matches her relaxed posture.", options: [
-      { text: "💬 'I love quiet places like this.'", interest: +15, patience: +5, correct: true },
-      { text: "☕ 'Do you want to grab coffee?'", interest: +10, patience: 0, correct: true },
-      { text: "🧢 'You look suspicious.'", interest: -20, patience: -20, correct: false },
-      { text: "😶 Say nothing", interest: -10, patience: -30, correct: false }
-    ]
+  <div id="bottombar">
+    <div class="card" id="dialogue">
+      <div id="speaker">Aarohi</div>
+      <div id="dialogue-text">"Hi there! What's on your mind today?"</div>
+    </div>
+
+    <div id="choices">
+      <button class="choice-btn" data-choice="1">💬 "I love quiet places like this."</button>
+      <button class="choice-btn" data-choice="2">☕ "Do you want to grab coffee?"</button>
+      <button class="choice-btn" data-choice="3">🔍 "You look suspicious, what's up?"</button>
+      <button class="choice-btn" data-choice="4">🚶‍♂️ Say nothing &amp; ignore her</button>
+    </div>
+
+    <div id="microw">
+      <button id="mic-btn">🎤 Speak to Her</button>
+      <span id="speech-status">Tap to use microphone</span>
+    </div>
+  </div>
+</div>
+
+<!-- TITLE SCREEN -->
+<div id="titleScreen">
+  <div class="panel">
+    <h1>Park Talk 3D</h1>
+    <div class="sub">A boy, a girl, and a talk that matters.</div>
+    <div class="btns">
+      <button class="big-btn" id="btnPlay">▶ Start</button>
+      <button class="big-btn ghost" id="btnContinue" style="display:none;">↻ Continue</button>
+      <button class="big-btn ghost" id="btnHowTo">? How to Play</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="modal" id="settingsModal">
+  <div class="box">
+    <h2>⚙️ Settings</h2>
+    <div class="row">
+      <label for="setSound">Sound effects</label>
+      <div class="switch"><input type="checkbox" id="setSound" checked><span class="slider"></span></div>
+    </div>
+    <div class="row">
+      <label for="setVoice">Voice speech</label>
+      <div class="switch"><input type="checkbox" id="setVoice" checked><span class="slider"></span></div>
+    </div>
+    <div class="row">
+      <label for="setMic">Microphone button</label>
+      <div class="switch"><input type="checkbox" id="setMic" checked><span class="slider"></span></div>
+    </div>
+    <div class="row">
+      <label for="setQuality">Render quality</label>
+      <input type="range" min="0.5" max="2" step="0.25" value="1" class="range" id="setQuality">
+    </div>
+    <div class="row">
+      <label for="setSpeed">Walk speed</label>
+      <input type="range" min="1" max="6" step="0.5" value="2.6" class="range" id="setSpeed">
+    </div>
+    <div class="actions">
+      <button class="ghost" id="btnCloseSettings">Close</button>
+      <button id="btnReset">Reset Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOW TO PLAY -->
+<div class="modal" id="howtoModal">
+  <div class="box">
+    <h2>How to Play</h2>
+    <p style="font-size:13.5px;line-height:1.7;opacity:.9;margin:0 0 12px;">
+      <b>Desktop:</b><br>
+      • WASD / Arrow keys — walk<br>
+      • Shift — run<br>
+      • Drag mouse — look around<br>
+      • Scroll — zoom<br><br>
+      <b>Mobile:</b><br>
+      • Left joystick — walk<br>
+      • Right circle — drag to look<br>
+      • 🏃 button — hold to run<br><br>
+      Talk to Aarohi by picking a choice or tapping 🎤.
+    </p>
+    <div class="actions">
+      <button id="btnCloseHowto">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENDING -->
+<div id="ending">
+  <div class="box">
+    <h1 id="ending-title">The End</h1>
+    <p id="ending-text">…</p>
+    <div class="actions">
+      <button class="ghost" onclick="location.reload()">Play Again</button>
+      <button id="btnEndingClose">Keep Walking</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div id="loader">LOADING 3D WORLD…</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* =========================================================
+   APP STATE & PERSISTENCE
+   ========================================================= */
+const APP = {
+  version: '1.0.0',
+  settings: {
+    sound: true,
+    voice: true,
+    mic: true,
+    quality: 1,
+    walkSpeed: 2.6
   },
-  { id: 2, name: "Mysterious Stranger (Beach)", x: 700, y: 150, avatar: "🕶️", type: "disguise", dialogue: "Hey bro! Uh I mean... hey handsome! Let's go on a secret date!", clues: "Voice pitch sounds unusually deep, and outfit style looks rushed/hidden.", options: [
-      { text: "💬 'Your voice sounds a bit deep, buddy?'", interest: +20, patience: +10, correct: true, trapReveal: true },
-      { text: "💖 'Let's go right now!'", interest: -50, patience: 0, trapFail: true },
-      { text: "🏃‍♂️ Walk away immediately", interest: +10, patience: +10, correct: true },
-      { text: "😶 Stare awkwardly", interest: -10, patience: -20, correct: false }
-    ]
-  },
-  { id: 3, name: "Srijana (Cafe)", x: 300, y: 350, avatar: "📚", type: "genuine", dialogue: "Good books make better company. What are you reading?", clues: "Carrying actual library books, speaks softly and intelligently.", options: [
-      { text: "💬 'Just exploring the city map.'", interest: +10, patience: +5, correct: true },
-      { text: "📚 'I prefer action comics!'", interest: +5, patience: 0, correct: true },
-      { text: "😴 Fall asleep standing", interest: -30, patience: -40, correct: false },
-      { text: "🚫 Ignore her rudely", interest: -10, patience: -20, correct: false }
-    ]
-  }
-];
-
-function initMap() {
-  const mapArea = document.getElementById('mapArea');
-  // Clear old dots except player
-  document.querySelectorAll('.encounter-dot').forEach(d => d.remove());
-
-  encounters.forEach(enc => {
-    const dot = document.createElement('div');
-    dot.className = 'encounter-dot';
-    dot.style.left = enc.x + 'px';
-    dot.style.top = enc.y + 'px';
-    dot.innerHTML = `🔴 ${enc.name.split(' ')[0]}`;
-    dot.onclick = (e) => {
-      e.stopPropagation();
-      startEncounter(enc);
-    };
-    mapArea.appendChild(dot);
-  });
-
-  updatePlayerPos();
-}
-
-function updatePlayerPos() {
-  const pin = document.getElementById('playerPin');
-  pin.style.left = playerX + 'px';
-  pin.style.top = playerY + 'px';
-}
-
-document.getElementById('mapArea').onclick = (e) => {
-  const rect = e.currentTarget.getBoundingClientRect();
-  playerX = e.clientX - rect.left;
-  playerY = e.clientY - rect.top;
-  updatePlayerPos();
+  progress: null
 };
 
-function startEncounter(enc) {
-  currentEncounter = enc;
-  interest = 70;
-  patience = 100;
-  
-  document.getElementById('mapScreen').classList.remove('active');
-  document.getElementById('conversationScreen').classList.add('active');
+const STORAGE_KEY = 'parktalk3d.save.v1';
+const SETTINGS_KEY = 'parktalk3d.settings.v1';
 
-  document.getElementById('npcAvatar').innerText = enc.avatar;
-  document.getElementById('npcName').innerText = enc.name;
-  document.getElementById('dialogueText').innerText = `"${enc.dialogue}"`;
-  document.getElementById('clueBox').innerHTML = `<b>🔎 Observation Clue:</b> ${enc.clues}`;
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) Object.assign(APP.settings, JSON.parse(raw));
+  } catch(e) {}
+}
+function saveSettings() {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(APP.settings)); } catch(e) {}
+}
+function saveProgress() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      interest: state.interest,
+      patience: state.patience,
+      boyPos: boy.root.position.toArray(),
+      boyRot: boy.root.rotation.y,
+      camYaw, camPitch, camDist,
+      ts: Date.now()
+    }));
+  } catch(e) {}
+}
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+function clearProgress() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+}
+loadSettings();
 
-  loadChoices();
-  startTimer();
+/* =========================================================
+   RENDERER / SCENE / LIGHTS
+   ========================================================= */
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, APP.settings.quality));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9fc6ee);
+scene.fog = new THREE.Fog(0x9fc6ee, 26, 70);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 200);
+
+scene.add(new THREE.HemisphereLight(0xd8e8ff, 0x4a6a3a, 1.15));
+
+const sun = new THREE.DirectionalLight(0xfff2d8, 2.2);
+sun.position.set(9, 16, 8);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = -0.0005;
+const kc = sun.shadow.camera;
+kc.left=-20; kc.right=20; kc.top=20; kc.bottom=-20; kc.near=1; kc.far=70;
+kc.updateProjectionMatrix();
+scene.add(sun);
+
+/* =========================================================
+   PARK ENVIRONMENT
+   ========================================================= */
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(45, 64),
+  new THREE.MeshStandardMaterial({ color:0x5c8a4a, roughness:1 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const plaza = new THREE.Mesh(
+  new THREE.CircleGeometry(5.5, 48),
+  new THREE.MeshStandardMaterial({ color:0x9c9182, roughness:1 })
+);
+plaza.rotation.x = -Math.PI/2;
+plaza.position.y = 0.012;
+plaza.receiveShadow = true;
+scene.add(plaza);
+
+const pond = new THREE.Mesh(
+  new THREE.CircleGeometry(3.4, 48),
+  new THREE.MeshStandardMaterial({ color:0x3b7bb8, roughness:0.22, metalness:0.4 })
+);
+pond.rotation.x = -Math.PI/2;
+pond.position.set(-9, 0.02, -6);
+pond.receiveShadow = true;
+scene.add(pond);
+
+for (let i = 0; i < 16; i++) {
+  const a = (i / 16) * Math.PI * 2;
+  const stone = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(0.22 + Math.random()*0.1, 0),
+    new THREE.MeshStandardMaterial({ color:0x8a8a86, roughness:1, flatShading:true })
+  );
+  stone.position.set(-9 + Math.cos(a) * 3.5, 0.14, -6 + Math.sin(a) * 3.5);
+  stone.rotation.set(Math.random(), Math.random(), Math.random());
+  stone.castShadow = true;
+  stone.receiveShadow = true;
+  scene.add(stone);
 }
 
-function loadChoices() {
-  const grid = document.getElementById('choicesGrid');
-  grid.innerHTML = '';
-  currentEncounter.options.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.innerText = opt.text;
-    btn.onclick = () => chooseOption(opt);
-    grid.appendChild(btn);
+const pathMat = new THREE.MeshStandardMaterial({ color:0xb0a58f, roughness:1 });
+for (let i = 0; i < 30; i++) {
+  const t = i / 29;
+  const x = -9 + t * 9;
+  const z = -6 + t * 6;
+  const tile = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 0.9), pathMat);
+  tile.position.set(x + Math.sin(i*0.5)*0.15, 0.02, z + Math.cos(i*0.3)*0.15);
+  tile.rotation.y = Math.atan2(6, 9) + (Math.random()-0.5)*0.15;
+  tile.receiveShadow = true;
+  scene.add(tile);
+}
+
+function makeTree(x, z, s) {
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14*s, 0.22*s, 1.8*s, 8),
+    new THREE.MeshStandardMaterial({ color:0x6b4a2f, roughness:1 })
+  );
+  trunk.position.y = 0.9*s;
+  trunk.castShadow = true;
+  g.add(trunk);
+  const leafMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color().setHSL(0.29, 0.5, 0.24 + Math.random()*0.15),
+    roughness: 1, flatShading: true
   });
-}
-
-function startTimer() {
-  clearInterval(timerInterval);
-  timeLeft = 10;
-  const fill = document.getElementById('timerFill');
-  
-  timerInterval = setInterval(() => {
-    timeLeft -= 0.1;
-    fill.style.width = (timeLeft / 10 * 100) + '%';
-    
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      patience -= 25;
-      updateMeters();
-      if (patience <= 0) {
-        alert("Patience ran out! They walked away.");
-        returnToMap();
-      }
-    }
-  }, 100);
-}
-
-function chooseOption(opt) {
-  clearInterval(timerInterval);
-  interest += opt.interest;
-  patience += opt.patience;
-  
-  if (opt.trapReveal) {
-    alert("💡 Surprise! Mask came off—it was a prank disguise! You successfully caught the trap! 😎");
-    rizz += 30;
-    score += 50;
-    returnToMap();
-    return;
+  for (let i = 0; i < 3; i++) {
+    const r = (1.05 - i*0.24) * s;
+    const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), leafMat);
+    leaf.position.y = (1.85 + i*0.65) * s;
+    leaf.rotation.y = Math.random() * Math.PI;
+    leaf.castShadow = true;
+    g.add(leaf);
   }
-  
-  if (opt.trapFail) {
-    alert("💀 Loudai lagyo! You accepted blindly without checking clues and fell for the trap! Game Over for this round.");
-    returnToMap();
-    return;
+  g.position.set(x, 0, z);
+  return g;
+}
+for (let i = 0; i < 18; i++) {
+  const a = (i / 18) * Math.PI * 2 + Math.random() * 0.4;
+  const r = 11 + Math.random() * 14;
+  scene.add(makeTree(Math.cos(a)*r, Math.sin(a)*r, 0.85 + Math.random()*0.7));
+}
+
+function makeBench() {
+  const g = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color:0x8b5a2b, roughness:0.9 });
+  const metal = new THREE.MeshStandardMaterial({ color:0x2b2f38, roughness:0.5, metalness:0.6 });
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.55), wood);
+  seat.position.y = 0.5; seat.castShadow = true; g.add(seat);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.55, 0.1), wood);
+  back.position.set(0, 0.85, -0.22); back.castShadow = true; g.add(back);
+  for (const s of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.5), metal);
+    leg.position.set(s*0.78, 0.25, 0); leg.castShadow = true; g.add(leg);
   }
-
-  updateMeters();
-
-  if (interest >= 100) {
-    alert("💕 Date was a massive success! Great observation and chat.");
-    rizz += 20;
-    score += 40;
-    returnToMap();
-  } else {
-    // Next dialogue phase
-    document.getElementById('dialogueText').innerText = `"That's interesting... tell me more."`;
-  }
+  return g;
 }
+const bench1 = makeBench();
+bench1.position.set(6, 0, -4);
+bench1.rotation.y = -0.7;
+scene.add(bench1);
 
-function ignoreEncounter() {
-  clearInterval(timerInterval);
-  alert("🚫 You successfully ignored/walked past. Safe choice!");
-  rizz += 5;
-  score += 10;
-  returnToMap();
+const bench2 = makeBench();
+bench2.position.set(-6, 0, 4);
+bench2.rotation.y = 0.9;
+scene.add(bench2);
+
+function makeLamp(x, z) {
+  const g = new THREE.Group();
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.1, 3.4, 10),
+    new THREE.MeshStandardMaterial({ color:0x2b2f38, roughness:0.5, metalness:0.7 })
+  );
+  pole.position.y = 1.7; pole.castShadow = true; g.add(pole);
+  const bulb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 16, 12),
+    new THREE.MeshStandardMaterial({ color:0xfff3c4, emissive:0xffe08a, emissiveIntensity:1.4 })
+  );
+  bulb.position.y = 3.5;
+  g.add(bulb);
+  const pl = new THREE.PointLight(0xffdca8, 10, 12, 2);
+  pl.position.y = 3.5;
+  g.add(pl);
+  g.position.set(x, 0, z);
+  return g;
 }
-
-function updateMeters() {
-  document.getElementById('interestNum').innerText = interest;
-  document.getElementById('interestFill').style.width = Math.max(0, Math.min(100, interest)) + '%';
-  document.getElementById('patienceNum').innerText = patience;
-  document.getElementById('patienceFill').style.width = Math.max(0, Math.min(100, patience)) + '%';
-  document.getElementById('rizzScore').innerText = rizz;
-  document.getElementById('totalScore').innerText = score;
-}
-
-function returnToMap() {
-  clearInterval(timerInterval);
-  document.getElementById('conversationScreen').classList.remove('active');
-  document.getElementById('mapScreen').classList.add('active');
-  updateMeters();
-  initMap();
-}
-
-// Initial Run
-initMap();
-</script>
-</body>
-</html>
+scene.add(makeLamp(-4.5, 4));
